@@ -179,14 +179,7 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
 
     use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
     session_dir = '/data' if use_data_dir else os.getcwd()
-
-    if use_data_dir and not os.path.exists(session_dir):
-        try:
-            os.makedirs(session_dir)
-            print(f"Created directory {session_dir} for session storage")
-        except Exception as e:
-            print(f"Failed to create directory {session_dir}: {e}")
-            return False, None
+    session_path = os.path.join(session_dir, "my_account.session")
 
     port = find_free_port()
 
@@ -194,11 +187,10 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
     web_thread.start()
 
     client = Client(
-        "my_account",
+        session_path,
         api_id=api_id,
         api_hash=api_hash,
-        device_model=device_model,
-        workdir=session_dir
+        device_model=device_model
     )
 
     try:
