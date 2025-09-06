@@ -23,8 +23,7 @@ def check_structure():
     if use_data_dir and not os.path.exists(base_dir):
         try:
             os.makedirs(base_dir)
-        except Exception as e:
-            print(f"Failed to create directory {base_dir}: {e}")
+        except Exception:
             return
 
     if os.path.exists(os.path.join(base_dir, "localhost_run_output.txt")):
@@ -71,9 +70,8 @@ async def start_userbot(app):
     user = await app.get_me()
     session_file = "my_account.session"
     if os.path.exists(session_file):
-        print("[Session]: Session already exists, restart not required")
+        pass
     else:
-        print("[Session]: First authorization, restarting main script")
         if os.path.exists("localhost_run_output.txt"):
             os.remove("localhost_run_output.txt")
         os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -90,7 +88,6 @@ def userbot():
     safe_mode = False
     if "--safe" in sys.argv:
         safe_mode = True
-        print("[Userbot] Starting in safe mode (only system plugins)...")
     
     api_id, api_hash, device_mod = my_api()
 
@@ -100,15 +97,11 @@ def userbot():
     if use_data_dir and not os.path.exists(session_dir):
         try:
             os.makedirs(session_dir)
-            print(f"Created directory {session_dir} for session storage")
-        except Exception as e:
-            print(f"Failed to create directory {session_dir}: {e}")
+        except Exception:
             return
 
     if not os.path.exists(os.path.join(session_dir, "my_account.session")):
-        print("[Userbot] First launch! Authorization required...")  
         if "--cli" in sys.argv:
-            print("[Userbot] Running in CLI mode...")
             client = Client(
                 "my_account",
                 api_id=api_id,
@@ -120,16 +113,10 @@ def userbot():
             success, user = start_web_auth(api_id, api_hash, device_mod)
             
             if not success or user is None:
-                print("[Userbot] Authorization failed!")
                 return
             else:
                 if not os.path.exists(os.path.join(session_dir, "my_account.session")):
-                    print("[Userbot] Restarting...")
                     os.execv(sys.executable, [sys.executable] + sys.argv)
-                else:
-                    print("[Userbot] Session already exists, authorization not required")
-    else:
-        print("[Userbot] Session already exists, authorization not required")
     
     prestart(api_id, api_hash, device_mod)
 
@@ -144,15 +131,10 @@ def userbot():
         ).run()
     except Exception as e:
         if not safe_mode:
-            print(f"[Userbot] Error detected: {e}")
-            print("[Userbot] Restarting in safe mode (only system plugins)...")
             os.execv(sys.executable, [sys.executable] + sys.argv + ["--safe"])
-        else:
-            print(f"[Userbot] Critical error in safe mode: {e}")
 
 if __name__ == "__main__":
     check_structure()
     convert_modules()
-    print("Starting FoxUserbot...")
     autoupdater()
     userbot()
