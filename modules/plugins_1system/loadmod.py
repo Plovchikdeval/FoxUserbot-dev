@@ -22,17 +22,16 @@ def modify_module_file(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        replacements = {
-            r'(["\'])userdata/': fr'\1{userdata_dir}/',
-            r'(["\'])temp/': fr'\1{temp_dir}/',
-            r'(["\'])triggers/': fr'\1{triggers_dir}/',
-            r'os\.path\.join\((["\'])userdata(["\'])': fr'os.path.join("\1{userdata_dir}\2"',
-            r'os\.path\.join\((["\'])temp(["\'])': fr'os.path.join("\1{temp_dir}\2"',
-            r'os\.path\.join\((["\'])triggers(["\'])': fr'os.path.join("\1{triggers_dir}\2"',
+        paths = {
+            'userdata': userdata_dir,
+            'temp': temp_dir,
+            'triggers': triggers_dir
         }
 
         modified = False
-        for pattern, repl in replacements.items():
+        for key, full_path in paths.items():
+            pattern = rf'(?<!{re.escape(full_path)}/)(f?["\']){key}/'
+            repl = rf'\1{full_path}/'
             new_content, count = re.subn(pattern, repl, content)
             if count > 0:
                 content = new_content
