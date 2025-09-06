@@ -181,7 +181,6 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
     user_data['device_mod'] = device_model
 
     session_dir = '/data' if use_data_dir else os.getcwd()
-    session_path = os.path.join(session_dir, "my_account.session")
 
     port = find_free_port()
 
@@ -223,6 +222,7 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
             if isinstance(signed_in, User):
                 current_step = 'success'
                 auth_result = signed_in
+                await client.session.save()
                 return True, signed_in
 
         except SessionPasswordNeeded:
@@ -241,6 +241,7 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
             user = await client.get_me()
             current_step = 'success'
             auth_result = user
+            await client.session.save()
             return True, user
 
         signed_up = await client.sign_up(current_phone, sent_code_hash, "FoxUserbot")
@@ -249,6 +250,7 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
             await client.accept_terms_of_service(str(signed_up.id))
         
         auth_result = signed_up
+        await client.session.save()
         return True, signed_up
 
     except RPCError as e:
