@@ -9,12 +9,11 @@ import configparser
 from pathlib import Path
 from datetime import datetime
 
-
-
 DEFAULT_INFO_IMAGE = "https://raw.githubusercontent.com/FoxUserbot/FoxUserbot/refs/heads/main/photos/FoxUB_info.jpg"
-THEME_PATH = "userdata/theme.ini"
-
-
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+base_dir = '/data' if use_data_dir else os.getcwd()
+userdata_dir = os.path.join(base_dir, "userdata")
+THEME_PATH = os.path.join(userdata_dir, "theme.ini")
 
 def get_platform_info():
     os_name = system()
@@ -43,7 +42,6 @@ def get_platform_info():
         return f"{os_display} ({os_release})"
     except:
         return f"💻 {os_name} ({os_release})"
-
 
 def format_uptime():
     uptime = datetime.now() - bot_start_time()
@@ -89,8 +87,12 @@ def replace_aliases(text, message):
 """
     return text + footer
 
-
 def get_info_image():
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            pass
     if not Path(THEME_PATH).exists():
         return DEFAULT_INFO_IMAGE
 
@@ -100,9 +102,6 @@ def get_info_image():
         return config.get("info", "image", fallback=DEFAULT_INFO_IMAGE)
     except:
         return DEFAULT_INFO_IMAGE
-
-
-
 
 def get_info_text(message):
     uptime_text = format_uptime()
@@ -117,7 +116,7 @@ def get_info_text(message):
             custom_text = config.get("info", "text", fallback=None)
             if custom_text and custom_text.strip() and custom_text != "Not set":
                 return replace_aliases(custom_text, message)
-        except Exception as e:
+        except Exception:
             pass
     
     return f"""
@@ -140,10 +139,9 @@ def get_info_text(message):
 <emoji id="5330237710655306682">📞</emoji> | <a href="https://t.me/nw_off">Nw_Off</a>
     """
 
-
 @Client.on_message(fox_command("info", "Info", os.path.basename(__file__)) & fox_sudo())
 async def info(client, message):
-    message = await who_message(client, message, message.reply_to_message)
+    message = await who_message(client, message)
     try:
         media_url = get_info_image()
         info_text = get_info_text(message)
@@ -170,8 +168,7 @@ async def info(client, message):
                 message_thread_id=message.message_thread_id
             )
         await message.delete()
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
         try:
             await client.send_photo(
                 message.chat.id, 

@@ -1,17 +1,33 @@
-from pyrogram import Client , filters
+from pyrogram import Client, filters
 from modules.plugins_1system.restarter import restart
 from command import fox_command, fox_sudo, who_message
 import os
 import json
 from pathlib import Path
 
-SUDO_USERS_FILE = Path("userdata/sudo_users.json")
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+base_dir = '/data' if use_data_dir else os.getcwd()
+userdata_dir = os.path.join(base_dir, "userdata")
+SUDO_USERS_FILE = Path(os.path.join(userdata_dir, "sudo_users.json"))
 
 def load_sudo_users():
-    with open(SUDO_USERS_FILE, "r") as f:
-        return json.load(f)
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            pass
+    try:
+        with open(SUDO_USERS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
 
 def save_sudo_users(users):
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            pass
     with open(SUDO_USERS_FILE, "w") as f:
         json.dump(users, f)
 
@@ -66,4 +82,3 @@ async def sudo_manager(client, message):
 
     else:
         await message.edit(f"<emoji id='5210952531676504517'>❌</emoji> <b>Unknown action! Use add/del/list</b>")
-

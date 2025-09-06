@@ -14,7 +14,6 @@ from pyrogram.client import Client
 from pyrogram.errors import RPCError, SessionPasswordNeeded
 from pyrogram.types import User, TermsOfService
 
-
 app = Flask(__name__)
 code_input = None
 auth_complete = False
@@ -24,9 +23,7 @@ current_phone = "+7"
 sent_code_hash = None 
 user_data = {'api_id': 0, 'api_hash': '', 'device_mod': ''}
 
-
 HTML_TEMPLATE = open('web_auth/site.html', 'r', encoding='utf-8').read()
-
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
@@ -80,9 +77,8 @@ def submit_code():
     
     code_input = code
     auth_complete = True
-    print(f"📝 Logging: Code entered: {code}")
+    print(f"Code entered: {code}")
     return jsonify({'message': 'Code received'})
-
 
 @app.route('/submit_password', methods=['POST'])
 def submit_password():
@@ -94,7 +90,7 @@ def submit_password():
     
     code_input = password
     auth_complete = True
-    print("📝 Logging: 2FA password entered")
+    print("2FA password entered")
     return jsonify({'message': 'Password received'})
 
 def find_free_port() -> int:
@@ -111,10 +107,10 @@ def ensure_ssh():
         if result.returncode == 0:
             return True
         else:
-            print("❌ SSH not found!")
+            print("SSH not found!")
             return False
     except Exception as e:
-        print(f"❌ Error checking SSH: {e}")
+        print(f"Error checking SSH: {e}")
         return False
 
 def get_public_url(port: int) -> Optional[str]:
@@ -134,10 +130,10 @@ def get_public_url(port: int) -> Optional[str]:
             )
         else:
             subprocess.Popen(
-            f'ssh -o StrictHostKeyChecking=no -R 80:localhost:{port} nokey@localhost.run > {localhost_run_output_file} 2>&1 &',
-            shell=True,
-            preexec_fn=os.setsid
-        )
+                f'ssh -o StrictHostKeyChecking=no -R 80:localhost:{port} nokey@localhost.run > {localhost_run_output_file} 2>&1 &',
+                shell=True,
+                preexec_fn=os.setsid
+            )
         
         timeout = 30 
         start_time = time.time()
@@ -151,22 +147,21 @@ def get_public_url(port: int) -> Optional[str]:
                             url = line.split()[-1]
                             return url
             time.sleep(1) 
-        print("⏰ Timeout reached, no URL found")
+        print("Timeout reached, no URL found")
         return None 
     except Exception as e:
-        print(f"📝 Logging: Error starting localhost.run or getting public URL: {e}")
+        print(f"Error starting localhost.run or getting public URL: {e}")
         return None
 
 def run_web_server(port: int):
     public_url = get_public_url(port)
     if public_url:
-        print(f"🌐 Public URL: {public_url}")
+        print(f"Public URL: {public_url}")
     if "SHARKHOST" in os.environ or "DOCKER" in os.environ:
         host = '0.0.0.0'
     else:
         host = '127.0.0.1'
     app.run(host=host, port=port, debug=False, use_reloader=False) 
-    
 
 async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool, Optional[User]]:
     global code_input, auth_complete, auth_result, current_step, current_phone, sent_code_hash
@@ -177,10 +172,21 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
     current_step = "phone"
     current_phone = "+7"
     sent_code_hash = None 
- 
+
     user_data['api_id'] = api_id
     user_data['api_hash'] = api_hash
     user_data['device_mod'] = device_model
+
+    use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+    session_dir = '/data' if use_data_dir else os.getcwd()
+
+    if use_data_dir and not os.path.exists(session_dir):
+        try:
+            os.makedirs(session_dir)
+            print(f"Created directory {session_dir} for session storage")
+        except Exception as e:
+            print(f"Failed to create directory {session_dir}: {e}")
+            return False, None
 
     port = find_free_port()
 
@@ -191,7 +197,8 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
         "my_account",
         api_id=api_id,
         api_hash=api_hash,
-        device_model=device_model
+        device_model=device_model,
+        workdir=session_dir
     )
 
     try:
@@ -266,4 +273,4 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
             pass
 
 def start_web_auth(api_id, api_hash, device_model) -> Tuple[bool, Optional[User]]:
-    return asyncio.run(web_auth(api_id, api_hash, device_model)) 
+    return asyncio.run(web_auth(api_id, api_hash, device_model))

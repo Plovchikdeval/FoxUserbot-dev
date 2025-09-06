@@ -2,16 +2,24 @@ from pyrogram import Client
 from modules.plugins_1system.settings.main_settings import module_list, version
 from command import fox_command, fox_sudo, who_message
 import os
-from telegraph import Telegraph
-import random
 import configparser
 from pathlib import Path
+from telegraph import Telegraph
+import random
 
 # Default
 DEFAULT_HELP_IMAGE = "https://raw.githubusercontent.com/FoxUserbot/FoxUserbot/main/photos/FoxUB_help.jpg"
-THEME_PATH = "userdata/theme.ini"
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+base_dir = '/data' if use_data_dir else os.getcwd()
+userdata_dir = os.path.join(base_dir, "userdata")
+THEME_PATH = os.path.join(userdata_dir, "theme.ini")
 
 def get_help_image():
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            pass
     if not Path(THEME_PATH).exists():
         return DEFAULT_HELP_IMAGE
 
@@ -21,7 +29,6 @@ def get_help_image():
         return config.get("help", "image", fallback=DEFAULT_HELP_IMAGE)
     except:
         return DEFAULT_HELP_IMAGE
-
 
 def get_help_text(message):
     from prefix import my_prefix
@@ -44,7 +51,6 @@ def get_help_text(message):
 
     a = "<br>".join(lists)
     
-    
     telegraph = Telegraph()
     telegraph.create_account(short_name='FoxServices')
     link = f"https://telegra.ph/{telegraph.create_page(f'FoxUserbot Help {random.randint(10000, 99999)}', html_content=f'{a}')['path']}"
@@ -65,7 +71,7 @@ def get_help_text(message):
                 for alias, value in aliases.items():
                     custom_text = custom_text.replace(alias, str(value))
                 return custom_text
-        except Exception as e:
+        except:
             pass
     
     return f"""
@@ -76,10 +82,9 @@ def get_help_text(message):
 <emoji id="5436113877181941026">❓</emoji><a href="{link}"><b> | List of all commands. </b></a>
 """
 
-
 @Client.on_message(fox_command("help", "Help", os.path.basename(__file__)) & fox_sudo())
 async def helps(client, message):
-    message = await who_message(client, message, message.reply_to_message)
+    message = await who_message(client, message)
     try:
         image_url = get_help_image()
         if image_url.split(".")[-1].lower() in ["mp4", "mov", "avi", "mkv", "webm"]:
@@ -89,7 +94,6 @@ async def helps(client, message):
                 caption="Loading the help menu...", 
                 message_thread_id=message.message_thread_id
             )
-
         elif image_url.split(".")[-1].lower() == "gif":
             da = await client.send_animation(
                 message.chat.id, 
@@ -99,15 +103,15 @@ async def helps(client, message):
             )
         else:
             da = await client.send_photo(
-            message.chat.id, 
-            photo=image_url, 
-            caption="Loading the help menu...", 
-            message_thread_id=message.message_thread_id 
-        )
+                message.chat.id, 
+                photo=image_url, 
+                caption="Loading the help menu...", 
+                message_thread_id=message.message_thread_id 
+            )
         await message.delete()
         caption = get_help_text(message)
         await client.edit_message_caption(message.chat.id, da.id, caption)
-    except Exception as e:
+    except:
         try:
             da = await client.send_photo(
                 message.chat.id, 

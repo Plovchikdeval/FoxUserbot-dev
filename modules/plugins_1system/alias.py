@@ -7,7 +7,10 @@ from typing import Dict, List
 from prefix import my_prefix
 from modules.plugins_1system.restarter import restart
 
-ALIASES_DB_PATH = "userdata/command_aliases.json"
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+base_dir = '/data' if use_data_dir else os.getcwd()
+userdata_dir = os.path.join(base_dir, "userdata")
+ALIASES_DB_PATH = os.path.join(userdata_dir, "command_aliases.json")
 
 class AliasManager:
     def __init__(self):
@@ -15,19 +18,29 @@ class AliasManager:
         self.load_aliases()
 
     def load_aliases(self):
+        if not os.path.exists(userdata_dir):
+            try:
+                os.makedirs(userdata_dir)
+            except Exception:
+                pass
         try:
             if os.path.exists(ALIASES_DB_PATH):
                 with open(ALIASES_DB_PATH, 'r') as f:
                     self.aliases = json.load(f)
-        except Exception as e:
-            print(f"Error loading aliases: {e}")
+        except Exception:
+            self.aliases = {}
 
     def save_aliases(self):
+        if not os.path.exists(userdata_dir):
+            try:
+                os.makedirs(userdata_dir)
+            except Exception:
+                pass
         try:
             with open(ALIASES_DB_PATH, 'w') as f:
                 json.dump(self.aliases, f, indent=4)
-        except Exception as e:
-            print(f"Error saving aliases: {e}")
+        except Exception:
+            pass
 
     def add_alias(self, alias: str, command: str):
         self.aliases[alias] = command
@@ -47,7 +60,7 @@ alias_manager = AliasManager()
 
 @Client.on_message(fox_command("alias", "AliasManager", os.path.basename(__file__), "[add/del/list] [alias] [command]") & fox_sudo())
 async def handle_aliases(client, message):
-    message = await who_message(client, message, message.reply_to_message)
+    message = await who_message(client, message)
     args = message.text.split(maxsplit=3)
     
     if len(args) < 2:
@@ -85,7 +98,6 @@ async def remove_alias(message, alias: str):
     if alias_manager.remove_alias(alias):
         await message.edit(f"<emoji id='5237699328843200968'>✅</emoji> | Alias <code>{alias}</code> deleted \n<emoji id='5264727218734524899'>🔄</emoji> | Rebooting...")
         await restart(message, restart_type="restart")
-
     else:
         await message.edit("<emoji id='5210952531676504517'>❌</emoji> | Alias not found")
 
