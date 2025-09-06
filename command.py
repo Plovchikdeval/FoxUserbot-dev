@@ -7,14 +7,24 @@ import json
 import os
 
 def load_aliases() -> dict:
+    use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+    base_dir = '/data' if use_data_dir else os.getcwd()
+    userdata_dir = os.path.join(base_dir, "userdata")
+
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            return {}
+
+    aliases_file = os.path.join(userdata_dir, "command_aliases.json")
     try:
-        if os.path.exists("userdata/command_aliases.json"):
-            with open("userdata/command_aliases.json", 'r') as f:
+        if os.path.exists(aliases_file):
+            with open(aliases_file, 'r') as f:
                 return json.load(f)
     except Exception:
         pass
     return {}
-
 
 async def who_message(client, message, reply_to_message=None):
     me = await client.get_me()
@@ -29,9 +39,18 @@ async def who_message(client, message, reply_to_message=None):
             reply_to_message_id=reply_to_id,
         )
 
-
 def fox_sudo():
-    sudo_file = Path("userdata/sudo_users.json")
+    use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+    base_dir = '/data' if use_data_dir else os.getcwd()
+    userdata_dir = os.path.join(base_dir, "userdata")
+
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            return filters.me
+
+    sudo_file = Path(os.path.join(userdata_dir, "sudo_users.json"))
     sudo_users_list = []
     try:
         with open(sudo_file, 'r', encoding='utf-8') as f:
@@ -40,7 +59,6 @@ def fox_sudo():
             return i
     except:
         return filters.me
-
 
 def fox_command(
     command: Union[str, List[str]], 
