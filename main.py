@@ -100,7 +100,9 @@ def userbot():
         except Exception:
             return
 
-    if not os.path.exists(os.path.join(session_dir, "my_account.session")):
+    session_path = os.path.join(session_dir, "my_account.session")
+    
+    if not os.path.exists(session_path):
         if "--cli" in sys.argv:
             client = Client(
                 "my_account",
@@ -108,14 +110,15 @@ def userbot():
                 api_hash=api_hash,
                 device_model=device_mod,
                 workdir=session_dir
-            ).run()
+            )
+            client.run()
         else:      
             success, user = start_web_auth(api_id, api_hash, device_mod)
             
             if not success or user is None:
                 return
             else:
-                if not os.path.exists(os.path.join(session_dir, "my_account.session")):
+                if not os.path.exists(session_path):
                     os.execv(sys.executable, [sys.executable] + sys.argv)
     
     prestart(api_id, api_hash, device_mod)
@@ -128,7 +131,8 @@ def userbot():
             device_model=device_mod,
             workdir=session_dir,
             plugins=dict(root="modules" if not safe_mode else "modules/plugins_1system")
-        ).run()
+        )
+        client.run()
     except Exception as e:
         if not safe_mode:
             os.execv(sys.executable, [sys.executable] + sys.argv + ["--safe"])
