@@ -88,6 +88,7 @@ def userbot():
     import os
     import sys
     import asyncio
+    import time
     
     safe_mode = False
     if "--safe" in sys.argv:
@@ -103,6 +104,26 @@ def userbot():
         except Exception:
             return
     
+    session_file = os.path.join(session_dir, "my_account.session")
+    
+    if os.path.exists(session_file):
+        prestart(api_id, api_hash, device_mod)
+        try:
+            client = Client(
+                "my_account",
+                api_id=api_id,
+                api_hash=api_hash,
+                device_model=device_mod,
+                workdir=session_dir,
+                plugins=dict(root="modules" if not safe_mode else "modules/plugins_1system")
+            )
+            client.run()
+        except Exception as e:
+            print(f"Error starting client: {e}")
+            if not safe_mode:
+                os.execv(sys.executable, [sys.executable] + sys.argv + ["--safe"])
+        return
+    
     if "--cli" in sys.argv:
         client = Client(
             "my_account",
@@ -117,10 +138,13 @@ def userbot():
         
         if not success or user is None:
             return
-        else:
-            session_file = os.path.join(session_dir, "my_account.session")
-            if not os.path.exists(session_file):
-                os.execv(sys.executable, [sys.executable] + sys.argv)
+        
+        time.sleep(2)
+        
+        if not os.path.exists(session_file):
+            print("Session file was not created after web auth. Restarting...")
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+            return
     
     prestart(api_id, api_hash, device_mod)
 
@@ -144,3 +168,4 @@ if __name__ == "__main__":
     convert_modules()
     autoupdater()
     userbot()
+
