@@ -4,8 +4,10 @@ from command import fox_command, fox_sudo, who_message
 import os
 import configparser
 
-
-PATH_FILE = "userdata/config.ini"
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+base_dir = '/data' if use_data_dir else os.getcwd()
+userdata_dir = os.path.join(base_dir, "userdata")
+PATH_FILE = os.path.join(userdata_dir, "config.ini")
 
 config = configparser.ConfigParser()
 config.read(PATH_FILE)
@@ -15,6 +17,11 @@ async def sprefix(client, message):
     message = await who_message(client, message)
     if len(message.text.split()) > 1:
         prefixgett = message.text.split()[1]
+        if not os.path.exists(userdata_dir):
+            try:
+                os.makedirs(userdata_dir)
+            except Exception:
+                pass
         config.set("prefix", "prefix", prefixgett)
         with open(PATH_FILE, "w") as config_file:
             config.write(config_file)
@@ -22,4 +29,3 @@ async def sprefix(client, message):
         await restart(message, restart_type="restart")
     else:
         await message.edit("<b>prefix don't be None</b>")
-
