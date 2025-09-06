@@ -6,7 +6,6 @@ import os
 import asyncio
 import json
 
-
 def prestart(api_id, api_hash, device_mod):
     from pyrogram.client import Client
     import asyncio
@@ -17,14 +16,28 @@ def prestart(api_id, api_hash, device_mod):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     
-    app = Client("my_account", api_id=api_id, api_hash=api_hash, device_model=device_mod)
-    print("📝 Logging: Checking connection to Telegram")
+    use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+    base_dir = '/data' if use_data_dir else os.getcwd()
+    triggers_dir = os.path.join(base_dir, "triggers")
+    userdata_dir = os.path.join(base_dir, "userdata")
+
+    if not os.path.exists(triggers_dir):
+        try:
+            os.makedirs(triggers_dir)
+        except Exception:
+            pass
+    
+    if not os.path.exists(userdata_dir):
+        try:
+            os.makedirs(userdata_dir)
+        except Exception:
+            pass
+
+    app = Client("my_account", api_id=api_id, api_hash=api_hash, device_model=device_mod, workdir=base_dir)
     
     async def check_connection():
         await app.connect()
-        print("📝 Logging: Connection successful")
         await app.disconnect()
-        print("📝 Logging: Disconnection after checking")
     
     loop.run_until_complete(check_connection())
     with app:
@@ -47,20 +60,20 @@ def prestart(api_id, api_hash, device_mod):
                 app.send_message("me", f"<emoji id='5210952531676504517'>❌</emoji> Got error: {f}\n\n" + text)
         
         # Triggers
-        for i in os.listdir("triggers"):
-            with open(f"triggers/{i}", 'r') as f:
+        for i in os.listdir(triggers_dir):
+            with open(os.path.join(triggers_dir, i), 'r') as f:
                 text = f.read().strip()
                 app.send_message("me", text, schedule_date=(datetime.now() + timedelta(seconds=70)))
 
         # Sudo User
         current_user_id = (app.get_users("me")).id
+        sudo_file = Path(os.path.join(userdata_dir, "sudo_users.json"))
         try:
-            with open(Path("userdata/sudo_users.json"), "r") as f:
+            with open(sudo_file, "r") as f:
                 existing_users = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             existing_users = []
         if current_user_id not in existing_users:
             existing_users.append(current_user_id)
-            with open(Path("userdata/sudo_users.json"), "w") as f:
+            with open(sudo_file, "w") as f:
                 json.dump(existing_users, f)
-
