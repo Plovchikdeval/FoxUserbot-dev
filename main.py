@@ -135,6 +135,7 @@ def userbot():
         )
         client.run()
     except Exception as e:
+        print(f"Error starting client: {e}")
         if not safe_mode:
             os.execv(sys.executable, [sys.executable] + sys.argv + ["--safe"])
 
