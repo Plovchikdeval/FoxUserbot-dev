@@ -25,6 +25,8 @@ user_data = {'api_id': 0, 'api_hash': '', 'device_mod': ''}
 
 HTML_TEMPLATE = open('web_auth/site.html', 'r', encoding='utf-8').read()
 
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('web_auth/static', filename)
@@ -117,7 +119,8 @@ def get_public_url(port: int) -> Optional[str]:
     if not ensure_ssh():
         return None
 
-    localhost_run_output_file = "localhost_run_output.txt"
+    session_dir = '/data' if use_data_dir else os.getcwd()
+    localhost_run_output_file = os.path.join(session_dir, "localhost_run_output.txt")
     if os.path.exists(localhost_run_output_file):
         os.remove(localhost_run_output_file)
 
@@ -157,7 +160,7 @@ def run_web_server(port: int):
     public_url = get_public_url(port)
     if public_url:
         print(f"Public URL: {public_url}")
-    if "SHARKHOST" in os.environ or "DOCKER" in os.environ:
+    if use_data_dir:
         host = '0.0.0.0'
     else:
         host = '127.0.0.1'
@@ -177,7 +180,6 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
     user_data['api_hash'] = api_hash
     user_data['device_mod'] = device_model
 
-    use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
     session_dir = '/data' if use_data_dir else os.getcwd()
     session_path = os.path.join(session_dir, "my_account.session")
 
@@ -187,10 +189,11 @@ async def web_auth(api_id: int, api_hash: str, device_model: str) -> Tuple[bool,
     web_thread.start()
 
     client = Client(
-        session_path,
+        "my_account",
         api_id=api_id,
         api_hash=api_hash,
-        device_model=device_model
+        device_model=device_model,
+        workdir=session_dir
     )
 
     try:
