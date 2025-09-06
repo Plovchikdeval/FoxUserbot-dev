@@ -105,11 +105,10 @@ def userbot():
     if not os.path.exists(session_path):
         if "--cli" in sys.argv:
             client = Client(
-                "my_account",
+                session_path,
                 api_id=api_id,
                 api_hash=api_hash,
-                device_model=device_mod,
-                workdir=session_dir
+                device_model=device_mod
             )
             client.run()
         else:      
@@ -125,11 +124,10 @@ def userbot():
 
     try:
         client = Client(
-            "my_account",
+            session_path,
             api_id=api_id,
             api_hash=api_hash,
             device_model=device_mod,
-            workdir=session_dir,
             plugins=dict(root="modules" if not safe_mode else "modules/plugins_1system")
         )
         client.run()
