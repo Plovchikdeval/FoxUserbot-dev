@@ -30,11 +30,15 @@ def modify_module_file(file_path):
 
         modified = False
         for key, full_path in paths.items():
-            pattern = rf'(?<![a-zA-Z0-9_/\\]){key}/'
-            repl = full_path + '/'
-            new_content, count = re.subn(pattern, repl, content)
-            if count > 0:
-                content = new_content
+            pattern = rf'(f?["\'])(?P<path>{key}/)'
+            matches = list(re.finditer(pattern, content))
+            for m in matches:
+                orig_path = m.group('path')
+                if orig_path.startswith(full_path.replace('\\', '/') + '/'):
+                    continue
+                print(f"Found path to replace: {orig_path}")
+                replacement = f"{full_path.replace('\\', '/')}/"
+                content = content[:m.start('path')] + replacement + content[m.end('path'):]
                 modified = True
 
         if modified:
