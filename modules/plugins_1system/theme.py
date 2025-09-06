@@ -4,8 +4,10 @@ import os
 from pathlib import Path
 from command import fox_command, fox_sudo, who_message
 
-THEME_PATH = "userdata/theme.ini"
-
+use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
+base_dir = '/data' if use_data_dir else os.getcwd()
+userdata_dir = os.path.join(base_dir, "userdata")
+THEME_PATH = os.path.join(userdata_dir, "theme.ini")
 
 @Client.on_message(fox_command("theme", "Theme", os.path.basename(__file__), "[help/info/vars] [set/reset] [image/text] [value]") & fox_sudo())
 async def theme_command(client, message):
@@ -52,7 +54,11 @@ async def theme_command(client, message):
                 await message.edit(f"**Usage:** `{my_prefix()}theme help set [image/text] [value]`")
                 return
                 
-            os.makedirs(os.path.dirname(THEME_PATH), exist_ok=True)
+            if not os.path.exists(userdata_dir):
+                try:
+                    os.makedirs(userdata_dir)
+                except Exception:
+                    pass
             config = configparser.ConfigParser()
             
             if Path(THEME_PATH).exists():
@@ -86,20 +92,24 @@ async def theme_command(client, message):
                 value = message.text.split()[4]
             elif message.text.split()[3] == "text":
                 if len(message.text.split()) < 5:
-                    await message.edit("**Usage:** `.theme info set text [text]`")
+                    await message.edit(f"**Usage:** `{my_prefix()}theme info set text [text]`")
                     return
                 
                 full_text = message.text.html
                 text_pos = full_text.find("text")
                 if text_pos == -1:
-                    await message.edit("**Usage:** `.theme info set text [text]`")
+                    await message.edit(f"**Usage:** `{my_prefix()}theme info set text [text]`")
                     return
                 value = '\n'.join(full_text[text_pos + 5:].strip().split("\n"))
             else:
-                await message.edit("**Usage:** `.theme info set [image/text] [value]`")
+                await message.edit(f"**Usage:** `{my_prefix()}theme info set [image/text] [value]`")
                 return
                 
-            os.makedirs(os.path.dirname(THEME_PATH), exist_ok=True)
+            if not os.path.exists(userdata_dir):
+                try:
+                    os.makedirs(userdata_dir)
+                except Exception:
+                    pass
             config = configparser.ConfigParser()
             
             if Path(THEME_PATH).exists():
@@ -141,8 +151,8 @@ async def theme_command(client, message):
 <code>[your prefix]theme help set text [your_text]</code>
 
 <b>5. Reset settings:</b>
-<code>{[your prefix]}theme info reset</code>
-<code>{[your prefix]}theme help reset</code>
+<code>[your prefix]theme info reset</code>
+<code>[your prefix]theme help reset</code>
 
 <b><emoji id='5444856076954520455'>📝</emoji> <u>Available aliases for info:</u></b>
 
@@ -160,7 +170,7 @@ async def theme_command(client, message):
 
 <b><emoji id='5422439311196834318'>💡</emoji> <u>Example custom text for info:</u></b>
 
-<code>{[your prefix]}theme info set text 🦊 FoxUserbot  {version}
+<code>[your prefix]theme info set text 🦊 FoxUserbot  {version}
 Kurigram: {version}
 🐍 Python {python_version}
 ⏰ Uptime: {uptime}
@@ -168,7 +178,7 @@ Kurigram: {version}
 
 <b><emoji id='5422439311196834318'>💡</emoji> <u>Example custom text for help:</u></b>
 
-<code>{[your prefix]}theme help set text 🦊 FoxUserbot {version}
+<code>[your prefix]theme help set text 🦊 FoxUserbot {version}
 📦 Modules: {modules_count}
 🔧 Prefix: {prefix}
 ❓ <a href="{commands_link}">List of all commands</a></code>
