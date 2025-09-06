@@ -30,8 +30,8 @@ def modify_module_file(file_path):
 
         modified = False
         for key, full_path in paths.items():
-            pattern = rf'(?<!{re.escape(full_path)}/)(f?["\']){key}/'
-            repl = rf'\1{full_path}/'
+            pattern = rf'(?<![a-zA-Z0-9_/\\]){key}/'
+            repl = full_path + '/'
             new_content, count = re.subn(pattern, repl, content)
             if count > 0:
                 content = new_content
