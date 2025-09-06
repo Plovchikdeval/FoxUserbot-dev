@@ -55,10 +55,6 @@ def modify_module_file(file_path):
                 modified = True
 
         if modified:
-            backup_path = file_path + '.backup'
-            with open(backup_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-                
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
                 
@@ -89,12 +85,16 @@ async def loadmod(client, message):
     await message.edit("<b>Loading module...</b>")
 
     try:
+        temp_file = None
+        final_file = None
+        
         if message.reply_to_message and message.reply_to_message.document:
             document = message.reply_to_message.document
             if not document.file_name.endswith('.py'):
                 await message.edit("<b>❌ Please provide a Python file (.py)</b>")
                 return
-            file_path = await client.download_media(document, file_name=os.path.join(modules_dir, document.file_name))
+            temp_file = await client.download_media(document, file_name=os.path.join(temp_dir, document.file_name))
+            final_file = os.path.join(modules_dir, document.file_name)
         else:
             try:
                 link = message.text.split()[1]
@@ -107,20 +107,53 @@ async def loadmod(client, message):
                 return
                 
             filename = os.path.basename(link)
-            file_path = os.path.join(modules_dir, filename)
+            temp_file = os.path.join(temp_dir, filename)
+            final_file = os.path.join(modules_dir, filename)
             
             try:
-                wget.download(link, file_path)
+                wget.download(link, temp_file)
             except Exception as e:
                 await message.edit(f"<b>❌ Failed to download module: {str(e)}</b>")
                 return
 
-        if not validate_python_file(file_path):
-            os.remove(file_path)
+        if not validate_python_file(temp_file):
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
             await message.edit("<b>❌ Invalid Python file. Module deleted.</b>")
             return
 
-        modified = modify_module_file(file_path)
+        with open(temp_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        paths = {
+            'userdata': userdata_dir,
+            'temp': temp_dir,
+            'triggers': triggers_dir
+        }
+
+        modified = False
+        for key, full_path in paths.items():
+            normalized_path = full_path.replace('\\', '/')
+            pattern = rf'(f?["\'])(?P<path>[^"\']*{key}/[^"\']*)'
+            matches = list(re.finditer(pattern, content))
+            
+            for m in reversed(matches):
+                orig_path = m.group('path')
+                if normalized_path in orig_path:
+                    continue
+                    
+                print(f"Found path to replace: {orig_path}")
+                replacement = orig_path.replace(f"{key}/", f"{normalized_path}/")
+                start_pos = m.start('path')
+                end_pos = m.end('path')
+                content = content[:start_pos] + replacement + content[end_pos:]
+                modified = True
+
+        with open(final_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
 
         if modified:
             await message.edit("<emoji id='5237699328843200968'>✅</emoji> Module loaded and modified successfully.\nRestarting...")
@@ -130,4 +163,6 @@ async def loadmod(client, message):
         await restart(message, restart_type="restart")
         
     except Exception as e:
+        if 'temp_file' in locals() and temp_file and os.path.exists(temp_file):
+            os.remove(temp_file)
         await message.edit(f"<b>❌ Error loading module: {str(e)}</b>")
