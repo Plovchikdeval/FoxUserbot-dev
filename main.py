@@ -66,6 +66,38 @@ def autoupdater():
     
     install_library('-r requirements.txt -U')
 
+def setup_logging():
+    if "--safe" in sys.argv:
+        log_file = 'temp/fox_userbot_safe.log'
+        try:
+            if os.path.exists("temp/fox_userbot_safe.log"):
+                os.remove("temp/fox_userbot_safe.log")
+        except:
+            pass
+    else:
+        log_file = 'temp/fox_userbot.log'
+        try:
+            if os.path.exists("temp/fox_userbot.log"):
+                os.remove("temp/fox_userbot.log")
+        except:
+            pass
+
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    console_handler = logging.StreamHandler()
+    
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    root_logger.setLevel(logging.INFO)
+    
+    return root_logger
+
 async def start_userbot(app):
     await app.start()
     user = await app.get_me()
@@ -166,6 +198,7 @@ def userbot():
 if __name__ == "__main__":
     check_structure()
     convert_modules()
+    logger = setup_logging()
+    logger.info("Starting FoxUserbot...")
     autoupdater()
     userbot()
-
