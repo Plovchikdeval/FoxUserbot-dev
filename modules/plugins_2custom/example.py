@@ -5,5 +5,5 @@ import os
 
 @Client.on_message(fox_command("example_edit", 'Example', os.path.basename(__file__), "[Example Arg]") & fox_sudo())
 async def example_edit(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     await message.edit("<code>This is an example module</code>")
