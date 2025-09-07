@@ -33,7 +33,7 @@ def save_sudo_users(users):
 
 @Client.on_message(fox_command("sudo", "SudoManager", os.path.basename(__file__), "[add/del/list] [@username/id]") & filters.me)
 async def sudo_manager(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     args = message.text.split(maxsplit=2)
     
     if len(args) < 2:
@@ -82,3 +82,4 @@ async def sudo_manager(client, message):
 
     else:
         await message.edit(f"<emoji id='5210952531676504517'>❌</emoji> <b>Unknown action! Use add/del/list</b>")
+
