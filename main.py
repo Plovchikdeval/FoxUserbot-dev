@@ -4,6 +4,7 @@ import os
 import time
 import sys
 import re
+import logging
 
 from requirements_installer import install_library
 from migrate import convert_modules
@@ -41,13 +42,15 @@ def autoupdater():
         from pyrogram.client import Client
     except ImportError:
         try:
-            os.remove("temp/firstlaunch.temp")
+            session_dir = '/data' if use_data_dir else os.getcwd()
+            os.remove(os.path.join(session_dir, "temp/firstlaunch.temp"))
         except OSError:
             pass
 
     first_launched = False
+    session_dir = '/data' if use_data_dir else os.getcwd()
     try:
-        with open("temp/firstlaunch.temp", "r", encoding="utf-8") as f:
+        with open(os.path.join(session_dir, "temp/firstlaunch.temp"), "r", encoding="utf-8") as f:
             if (f.readline().strip() == "1"):
                 first_launched = True
     except FileNotFoundError:
@@ -61,24 +64,30 @@ def autoupdater():
             os.system("termux-wake-lock")
             os.system("pkg update -y ; pkg install uv -y")
         install_library('tgcrypto -U')
-        with open("temp/firstlaunch.temp", "w", encoding="utf-8") as f:
+        with open(os.path.join(session_dir, "temp/firstlaunch.temp"), "w", encoding="utf-8") as f:
             f.write("1")
     
     install_library('-r requirements.txt -U')
 
 def setup_logging():
+    session_dir = '/data' if use_data_dir else os.getcwd()
+    log_dir = os.path.join(session_dir, 'temp')
+    
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    
     if "--safe" in sys.argv:
-        log_file = 'temp/fox_userbot_safe.log'
+        log_file = os.path.join(log_dir, 'fox_userbot_safe.log')
         try:
-            if os.path.exists("temp/fox_userbot_safe.log"):
-                os.remove("temp/fox_userbot_safe.log")
+            if os.path.exists(log_file):
+                os.remove(log_file)
         except:
             pass
     else:
-        log_file = 'temp/fox_userbot.log'
+        log_file = os.path.join(log_dir, 'fox_userbot.log')
         try:
-            if os.path.exists("temp/fox_userbot.log"):
-                os.remove("temp/fox_userbot.log")
+            if os.path.exists(log_file):
+                os.remove(log_file)
         except:
             pass
 
