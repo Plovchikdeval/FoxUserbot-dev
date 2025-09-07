@@ -52,7 +52,7 @@ async def restart(message: Message, restart_type):
 
 @Client.on_message(fox_command("restart", "Restarter", os.path.basename(__file__)) & fox_sudo())
 async def restart_get(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     try:
         await message.edit("<emoji id='5264727218734524899'>🔄</emoji> **Restarting userbot...**")
         await restart(message, restart_type="restart")
@@ -61,7 +61,7 @@ async def restart_get(client, message):
 
 @Client.on_message(fox_command("update", "Restarter", os.path.basename(__file__)) & fox_sudo())
 async def update(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
     base_dir = '/data' if use_data_dir else os.getcwd()
     temp_dir = os.path.join(base_dir, "temp")
@@ -95,7 +95,7 @@ async def update(client, message):
 
 @Client.on_message(fox_command("beta", "Restarter", os.path.basename(__file__)) & fox_sudo())
 async def update_beta(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     use_data_dir = 'SHARKHOST' in os.environ or 'DOCKER' in os.environ
     base_dir = '/data' if use_data_dir else os.getcwd()
     temp_dir = os.path.join(base_dir, "temp")
@@ -126,3 +126,4 @@ async def update_beta(client, message):
         await restart(message, restart_type="update")
     except:
         await message.edit(f"<emoji id='5210952531676504517'>❌</emoji> **An error occured...**")
+
