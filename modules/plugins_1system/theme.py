@@ -11,7 +11,7 @@ THEME_PATH = os.path.join(userdata_dir, "theme.ini")
 
 @Client.on_message(fox_command("theme", "Theme", os.path.basename(__file__), "[help/info/vars] [set/reset] [image/text] [value]") & fox_sudo())
 async def theme_command(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     from prefix import my_prefix
     if len(message.text.split()) < 2:
         text = ""
@@ -185,3 +185,4 @@ Kurigram: {version}
 </blockquote>
         """
         await message.edit(help_text)
+
