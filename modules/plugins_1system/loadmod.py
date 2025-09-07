@@ -57,8 +57,6 @@ def modify_module_file(file_path):
         if modified:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-                
-            print(f"File modified successfully. Backup created at: {backup_path}")
 
         return modified
     except Exception as e:
@@ -81,7 +79,7 @@ def validate_python_file(file_path):
 
 @Client.on_message(fox_command("loadmod", "Loadmod", os.path.basename(__file__), "[link to the module/reply]") & fox_sudo())
 async def loadmod(client, message):
-    message = await who_message(client, message)
+    message = await who_message(client, message, message.reply_to_message)
     await message.edit("<b>Loading module...</b>")
 
     try:
